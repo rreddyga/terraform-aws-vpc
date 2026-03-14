@@ -33,7 +33,7 @@ variable "public_subnet_tags" {
     default = {}
 }
 #private cidr
-variable "privatte_subnets_cidr" {
+variable "private_subnets_cidr" {
     type = list
     default = ["10.0.11.0/24","10.0.12.0/24"]
 }
