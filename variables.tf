@@ -23,13 +23,43 @@ variable "igw_tags" {
     type = map
     default = {}
 }
-
+#public cidr
 variable "public_subnets_cidr" {
     type = list
     default = ["10.0.1.0/24","10.0.2.0/24"]
 }
-
 variable "public_subnet_tags" {
     type = map
+    default = {}
+}
+#private cidr
+variable "privatte_subnets_cidr" {
+    type = list
+    default = ["10.0.11.0/24","10.0.12.0/24"]
+}
+variable "private_subnet_tags" {
+    type = map
+    default = {}
+}
+#database cidr
+variable "database_subnets_cidr" {
+    type = list
+    default = ["10.0.21.0/24","10.0.22.0/24"]
+}
+variable "database_subnet_tags" {
+    type = map
+    default = {}
+}
+#route_table tags
+variable "public_route_table_tags" {
+     type = map
+    default = {}
+}
+variable "private_route_table_tags" {
+     type = map
+    default = {}
+}
+variable "database_route_table_tags" {
+     type = map
     default = {}
 }
