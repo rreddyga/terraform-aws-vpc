@@ -10,10 +10,8 @@ resource "aws_vpc" "main" {
 }
 
 #Internet gatway creation
-
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id #vpc association
-
   tags = local.igw_final_tags
 }
 
@@ -21,12 +19,12 @@ resource "aws_internet_gateway" "gw" {
 resource "aws_subnet" "public" {
   #we will get two subnets
   count = length(var.public_subnets_cidr)
-  vpc_id     = aws_vpc.main.id
+  vpc_id = aws_vpc.main.id
 
   #cidr_block = "10.0.1.0/24"
   cidr_block = var.public_subnets_cidr[count.index]
 
-  # available zones we need to get dynamically
+  # availability_zone we need to get dynamically
   availability_zone = local.az_names[count.index]
 
   #to get the publicip
@@ -91,7 +89,7 @@ resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id # vpc association
 
   route = []
-
+  
   tags = merge(
     local.common_tags,
     #roboshop-dev-public
@@ -130,6 +128,64 @@ resource "aws_route_table" "database" {
     {
       Name = "${var.project}-${var.environment}-database"
     },
-    var.private_route_table_tags
+    var.database_route_table_tags
   )
 }
+
+#public route
+
+resource "aws_route" "public" {
+  route_table_id            = aws_route_table.public.id
+  destination_cidr_block    = "0.0.0.0/0"
+  gateway_id = aws.aws_internet_gateway.main.id
+}
+
+#we want to create NAT need elastic ip like static ip 
+resource "aws_eip" "nat" {
+  domain                    = "vpc"
+  tags =  merge(
+    local.common_tags,
+    #roboshop-dev-nat
+    {
+      Name = "${var.project}-${var.environment}-nat"
+    },
+    var.eip_tags
+  )
+}
+
+#create nat
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public[0].id # we are creating public  us-east-1a az
+
+  tags =  merge(
+    local.common_tags,
+    #roboshop-dev-nat
+    {
+      Name = "${var.project}-${var.environment}-nat"
+    },
+    var.nat_gateway_tags
+  )
+
+  # To ensure proper ordering, it is recommended to add an explicit dependency
+  # on the Internet Gateway for the VPC.
+  depends_on = [aws_internet_gateway.main]
+}
+
+#private route
+resource "aws_route" "private" {
+  route_table_id            = aws_route_table.private.id
+  destination_cidr_block    = "0.0.0.0/0"
+  #nat_gateway_id = aws.aws_internet_gateway.main.id
+  nat_gateway_id = aws_nat_gateway.nat.id
+}
+
+#database route
+resource "aws_route" "database" {
+  route_table_id            = aws_route_table.database.id
+  destination_cidr_block    = "0.0.0.0/0"
+  #gateway_id = aws.aws_internet_gateway.main.id
+  nat_gateway_id = aws_nat_gateway.nat.id
+
+}
+
