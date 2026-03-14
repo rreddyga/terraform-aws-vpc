@@ -10,7 +10,7 @@ resource "aws_vpc" "main" {
 }
 
 #Internet gatway creation
-resource "aws_internet_gateway" "gw" {
+resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id #vpc association
   tags = local.igw_final_tags
 }
