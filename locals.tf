@@ -23,7 +23,7 @@ locals {
     # slice function(list,0,2)
                     # start_index is inclusive
                     # end_index is exclusive that mean we will get index 0,1
-    az_names = slice(data.aws_availability_zones.available.name,0,2)
+    az_names = slice(data.aws_availability_zones.available.names,0,2)
 
     public_subnet_tags = merge(
         local.common_tags,
