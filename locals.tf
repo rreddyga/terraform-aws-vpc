@@ -22,6 +22,11 @@ locals {
     #we need to use slice function to get two az for our requirement by defualt 6 az are available
     # slice function(list,0,2)
                     # start_index is inclusive
-                    $ end_index is exclusive that mean we will get index 0,1
+                    # end_index is exclusive that mean we will get index 0,1
     az_names = slice(data.aws_availability_zones.available.name,0,2)
+
+    public_subnet_tags = merge(
+        local.common_tags,
+        #roboshop-dev-public-us-east-1a
+    )
 }
