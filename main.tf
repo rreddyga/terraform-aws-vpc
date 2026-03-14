@@ -16,3 +16,31 @@ resource "aws_internet_gateway" "gw" {
 
   tags = local.igw_final_tags
 }
+
+#subnets
+
+resource "aws_subnet" "public" {
+  #we will get two subnets
+  count = length(var.public_subnets_cidr)
+  vpc_id     = aws_vpc.main.id
+
+  #cidr_block = "10.0.1.0/24"
+  cidr_block = var.public_subnets_cidr[count.index]
+
+  # available zones we need to get dynamically
+
+  availability_zone = local.az_names[count.index]
+
+  #to get the publicip
+  map_public_ip_on_launch = true
+
+
+  tags = merge(
+    local.common_tags,
+    #roboshop-dev-public-us-east-1a
+    {
+      Name = "${var.project}- ${var.environment}-public-${local.az_names[count.index]}"
+    },
+    var.public_subnet_tags;
+  )
+}
