@@ -11,11 +11,12 @@ resource "aws_vpc" "main" {
 
 #Internet gatway creation
 resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id #vpc association
+  vpc_id = aws_vpc.main.id # VPC association
+
   tags = local.igw_final_tags
 }
 
-#public subnets
+# Public Subnets
 resource "aws_subnet" "public" {
   #we will get two subnets
   count = length(var.public_subnets_cidr)
@@ -31,16 +32,16 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = merge(
-    local.common_tags,
-    #roboshop-dev-public-us-east-1a
-    {
-      Name = "${var.project}-${var.environment}-public-${local.az_names[count.index]}"
-    },
-    var.public_subnet_tags
-  )
+        local.common_tags,
+        # roboshop-dev-public-us-east-1a
+        {
+            Name = "${var.project}-${var.environment}-public-${local.az_names[count.index]}"
+        },
+        var.public_subnet_tags
+    )
 }
 
-#private subnets
+# private Subnets
 resource "aws_subnet" "private" {
   #we will get two subnets
   count = length(var.private_subnets_cidr)
@@ -53,16 +54,16 @@ resource "aws_subnet" "private" {
   availability_zone = local.az_names[count.index]
 
   tags = merge(
-    local.common_tags,
-    #roboshop-dev-private-us-east-1a
-    {
-      Name = "${var.project}-${var.environment}-private-${local.az_names[count.index]}"
-    },
-    var.private_subnet_tags
-  )
+        local.common_tags,
+        # roboshop-dev-private-us-east-1a
+        {
+            Name = "${var.project}-${var.environment}-private-${local.az_names[count.index]}"
+        },
+        var.private_subnet_tags
+    )
 }
 
-#database subnets
+# database Subnets
 resource "aws_subnet" "database" {
   #we will get two subnets
   count = length(var.database_subnets_cidr)
@@ -75,28 +76,26 @@ resource "aws_subnet" "database" {
   availability_zone = local.az_names[count.index]
 
   tags = merge(
-    local.common_tags,
-    #roboshop-dev-database-us-east-1a
-    {
-      Name = "${var.project}-${var.environment}-database-${local.az_names[count.index]}"
-    },
-    var.database_subnet_tags
-  )
+        local.common_tags,
+        # roboshop-dev-database-us-east-1a
+        {
+            Name = "${var.project}-${var.environment}-database-${local.az_names[count.index]}"
+        },
+        var.database_subnet_tags
+    )
 }
 
 #public route_table creation
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id # vpc association
 
-  route = []
-  
   tags = merge(
-    local.common_tags,
-    #roboshop-dev-public
-    {
-      Name = "${var.project}-${var.environment}-public"
-    },
-    var.public_route_table_tags
+        local.common_tags,
+        # roboshop-dev-public
+        {
+            Name = "${var.project}-${var.environment}-public"
+        },
+        var.public_route_table_tags
   )
 }
 
@@ -107,28 +106,27 @@ resource "aws_route_table" "private" {
   route = []
 
   tags = merge(
-    local.common_tags,
-    #roboshop-dev-private
-    {
-      Name = "${var.project}-${var.environment}-private"
-    },
-    var.private_route_table_tags
+        local.common_tags,
+        # roboshop-dev-private
+        {
+            Name = "${var.project}-${var.environment}-private"
+        },
+        var.private_route_table_tags
   )
 }
 
-#database route_table creation
 resource "aws_route_table" "database" {
   vpc_id = aws_vpc.main.id # vpc association
 
-  route = []
+ 
 
   tags = merge(
-    local.common_tags,
-    #roboshop-dev-database
-    {
-      Name = "${var.project}-${var.environment}-database"
-    },
-    var.database_route_table_tags
+        local.common_tags,
+        # roboshop-dev-database
+        {
+            Name = "${var.project}-${var.environment}-database"
+        },
+        var.database_route_table_tags
   )
 }
 
@@ -154,15 +152,15 @@ resource "aws_eip" "nat" {
 }
 
 #create nat
-resource "aws_nat_gateway" "nat" {
+resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id # we are creating public  us-east-1a az
+  subnet_id     = aws_subnet.public[0].id # we are creating this in us-east-1a AZ
 
   tags =  merge(
     local.common_tags,
-    #roboshop-dev-nat
+    #roboshop-dev
     {
-      Name = "${var.project}-${var.environment}-nat"
+      Name = "${var.project}-${var.environment}"
     },
     var.nat_gateway_tags
   )
@@ -176,16 +174,14 @@ resource "aws_nat_gateway" "nat" {
 resource "aws_route" "private" {
   route_table_id            = aws_route_table.private.id
   destination_cidr_block    = "0.0.0.0/0"
-  #nat_gateway_id = aws.aws_internet_gateway.main.id
-  nat_gateway_id = aws_nat_gateway.nat.id
+  nat_gateway_id = aws_nat_gateway.main.id
 }
 
 #database route
 resource "aws_route" "database" {
   route_table_id            = aws_route_table.database.id
   destination_cidr_block    = "0.0.0.0/0"
-  #gateway_id = aws.aws_internet_gateway.main.id
-  nat_gateway_id = aws_nat_gateway.nat.id
+  nat_gateway_id = aws_nat_gateway.main.id
 }
 
 #public route_table association
@@ -208,5 +204,3 @@ resource "aws_route_table_association" "database" {
   subnet_id      = aws_subnet.database[count.index].id
   route_table_id = aws_route_table.database.id
 }
-
-
