@@ -14,7 +14,5 @@ resource "aws_vpc" "main" {
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id #vpc association
 
-  tags = {
-    Name = "main"
-  }
+  tags = local.igw_final_tags
 }
