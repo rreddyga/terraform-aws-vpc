@@ -72,3 +72,9 @@ variable "nat_gateway_tags" {
      type = map
     default = {}
 }
+
+variable "is_vpc_peering_required" {
+  description = "Enable VPC peering"
+  type        = bool
+  default     = false
+}
